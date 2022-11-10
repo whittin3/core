@@ -5,5 +5,6 @@
   "requirements": ["concord232==0.15"],
   "codeowners": [],
   "iot_class": "local_polling",
-  "loggers": ["concord232", "stevedore"]
+  "loggers": ["concord232", "stevedore"],
+  "version": "1.0.0"
 }
