@@ -107,9 +107,11 @@ class Concord232Alarm(alarm.AlarmControlPanelEntity):
             return
 
         for zone in zones:
-            if (zone["state"] == "Unknown"):
+            if zone["state"] == "Unknown":
                 self._attr_state = STATE_ALARM_TRIGGERED
+                self._attr_extra_state_attributes = {"triggered_by": zone["name"]}
                 return
+        self._attr_extra_state_attributes = {}
         if alarm_monitor["arming_level"] == "Off":
             self._attr_state = STATE_ALARM_DISARMED
         elif "Home" in alarm_monitor["arming_level"]:
@@ -138,6 +140,10 @@ class Concord232Alarm(alarm.AlarmControlPanelEntity):
             return
         self._alarm.arm("away")
 
+    def alarm_trigger(self, code: str | None = None) -> None:
+        """Send alarm trigger command."""
+        self._alarm.sound_alarm("police")
+
     def _validate_code(self, code, state):
         """Validate given code."""
         if self._code is None:
@@ -150,8 +156,3 @@ class Concord232Alarm(alarm.AlarmControlPanelEntity):
         if not check:
             _LOGGER.warning("Invalid code given for %s", state)
         return check
-
-    @property
-    def unique_id(self):
-        """Return a unique id for this sensor."""
-        return f"{self._number}"
