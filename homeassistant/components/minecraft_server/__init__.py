@@ -143,7 +143,10 @@ class MinecraftServer:
             self.online = True
         except OSError as error:
             _LOGGER.debug(
-                "Error occurred while trying to check the connection to '%s:%s' - OSError: %s",
+                (
+                    "Error occurred while trying to check the connection to '%s:%s' -"
+                    " OSError: %s"
+                ),
                 self.host,
                 self.port,
                 error,
@@ -234,7 +237,6 @@ class MinecraftServerEntity(Entity):
     ) -> None:
         """Initialize base entity."""
         self._server = server
-        self._attr_name = type_name
         self._attr_icon = icon
         self._attr_unique_id = f"{self._server.unique_id}-{type_name}"
         self._attr_device_info = DeviceInfo(

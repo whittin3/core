@@ -31,12 +31,17 @@ from homeassistant.helpers.template_entity import (
     TEMPLATE_ENTITY_BASE_SCHEMA,
     TEMPLATE_SENSOR_BASE_SCHEMA,
 )
+from homeassistant.util.ssl import SSLCipherList
 
 from .const import (
+    CONF_ENCODING,
     CONF_JSON_ATTRS,
     CONF_JSON_ATTRS_PATH,
+    CONF_SSL_CIPHER_LIST,
+    DEFAULT_ENCODING,
     DEFAULT_FORCE_UPDATE,
     DEFAULT_METHOD,
+    DEFAULT_SSL_CIPHER_LIST,
     DEFAULT_VERIFY_SSL,
     DOMAIN,
     METHODS,
@@ -56,7 +61,12 @@ RESOURCE_SCHEMA = {
     vol.Optional(CONF_PASSWORD): cv.string,
     vol.Optional(CONF_PAYLOAD): cv.string,
     vol.Optional(CONF_VERIFY_SSL, default=DEFAULT_VERIFY_SSL): cv.boolean,
+    vol.Optional(
+        CONF_SSL_CIPHER_LIST,
+        default=DEFAULT_SSL_CIPHER_LIST,
+    ): vol.In([e.value for e in SSLCipherList]),
     vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.positive_int,
+    vol.Optional(CONF_ENCODING, default=DEFAULT_ENCODING): cv.string,
 }
 
 SENSOR_SCHEMA = {
@@ -91,9 +101,8 @@ COMBINED_SCHEMA = vol.Schema(
 CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.All(
-            # convert empty dict to empty list
-            lambda x: [] if x == {} else x,
             cv.ensure_list,
+            cv.remove_falsy,
             [COMBINED_SCHEMA],
         )
     },
