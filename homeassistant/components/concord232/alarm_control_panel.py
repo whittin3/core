@@ -22,6 +22,7 @@ from homeassistant.const import (
     STATE_ALARM_ARMED_AWAY,
     STATE_ALARM_ARMED_HOME,
     STATE_ALARM_DISARMED,
+    STATE_ALARM_TRIGGERED,
 )
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
@@ -77,6 +78,7 @@ class Concord232Alarm(alarm.AlarmControlPanelEntity):
     _attr_supported_features = (
         AlarmControlPanelEntityFeature.ARM_HOME
         | AlarmControlPanelEntityFeature.ARM_AWAY
+        | AlarmControlPanelEntityFeature.TRIGGER
     )
 
     def __init__(self, url, name, code, mode):
@@ -92,7 +94,8 @@ class Concord232Alarm(alarm.AlarmControlPanelEntity):
     def update(self) -> None:
         """Update values from API."""
         try:
-            part = self._alarm.list_partitions()[0]
+            alarm_monitor = self._alarm.list_partitions()[0]
+            zones = self._alarm.list_zones()
         except requests.exceptions.ConnectionError as ex:
             _LOGGER.error(
                 "Unable to connect to %(host)s: %(reason)s",
@@ -103,9 +106,15 @@ class Concord232Alarm(alarm.AlarmControlPanelEntity):
             _LOGGER.error("Concord232 reports no partitions")
             return
 
-        if part["arming_level"] == "Off":
+        for zone in zones:
+            if zone["state"] == "Unknown":
+                self._attr_state = STATE_ALARM_TRIGGERED
+                self._attr_extra_state_attributes = {"triggered_by": zone["name"]}
+                return
+        self._attr_extra_state_attributes = {}
+        if alarm_monitor["arming_level"] == "Off":
             self._attr_state = STATE_ALARM_DISARMED
-        elif "Home" in part["arming_level"]:
+        elif "Home" in alarm_monitor["arming_level"]:
             self._attr_state = STATE_ALARM_ARMED_HOME
         else:
             self._attr_state = STATE_ALARM_ARMED_AWAY
@@ -130,6 +139,10 @@ class Concord232Alarm(alarm.AlarmControlPanelEntity):
         if not self._validate_code(code, STATE_ALARM_ARMED_AWAY):
             return
         self._alarm.arm("away")
+
+    def alarm_trigger(self, code: str | None = None) -> None:
+        """Send alarm trigger command."""
+        self._alarm.sound_alarm("police")
 
     def _validate_code(self, code, state):
         """Validate given code."""
